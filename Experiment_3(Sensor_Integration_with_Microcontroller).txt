@@ -1,0 +1,83 @@
+#include <DHT.h>
+
+#define DHTPIN 2
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// Ultrasonic sensor pins
+#define TRIG 3
+#define ECHO 4
+
+// Moving average filter variables
+float tempSum = 0, humSum = 0, distSum = 0;
+const int windowSize = 5;
+float tempReadings[windowSize], humReadings[windowSize], distReadings[windowSize];
+int index = 0;
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  for (int i = 0; i < windowSize; i++) {
+    tempReadings[i] = humReadings[i] = distReadings[i] = 0;
+  }
+}
+
+float readDistanceCM() {
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long duration = pulseIn(ECHO, HIGH);
+  float distance = duration * 0.034 / 2;  // Convert time to distance (cm)
+  return distance;
+}
+
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  float d = readDistanceCM();
+
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Sensor Error");
+    delay(1000);
+    return;
+  }
+
+  // Calibration offsets
+  t = t + 0.5;   // Adjust temperature
+  d = d - 1.2;   // Adjust distance
+
+  // Moving average filter
+  tempSum -= tempReadings[index];
+  humSum  -= humReadings[index];
+  distSum -= distReadings[index];
+
+  tempReadings[index] = t;
+  humReadings[index] = h;
+  distReadings[index] = d;
+
+  tempSum += t;
+  humSum  += h;
+  distSum += d;
+
+  index = (index + 1) % windowSize;
+
+  float avgTemp = tempSum / windowSize;
+  float avgHum  = humSum / windowSize;
+  float avgDist = distSum / windowSize;
+
+  // Output data
+  Serial.print("Temperature (°C): ");
+  Serial.print(avgTemp);
+  Serial.print(" | Humidity (%): ");
+  Serial.print(avgHum);
+  Serial.print(" | Distance (cm): ");
+  Serial.println(avgDist);
+
+  delay(2000);
+}
