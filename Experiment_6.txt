@@ -1,0 +1,53 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def inverse_kinematics(x, y, theta_total, l1, l2):
+    """Calculates joint angles (theta1, theta2) for a 2-DOF robot arm."""
+    d = np.sqrt(x**2 + y**2)
+    if d > l1 + l2 or d < abs(l1 - l2):
+        raise ValueError("Target is out of reach for the robot arm.")
+    
+    alpha = np.arctan2(y, x)
+    beta = np.arccos((l1**2 + d**2 - l2**2) / (2 * l1 * d))
+    theta1 = alpha - beta
+    theta2 = theta_total - theta1
+    return theta1, theta2
+
+# ---- Main Program ----
+try:
+    x = float(input("Enter target X: "))
+    y = float(input("Enter target Y: "))
+    theta_total_deg = float(input("Enter total end-effector angle (°): "))
+    theta_total = np.radians(theta_total_deg)
+
+    l1 = l2 = 1  # Link lengths
+
+    theta1, theta2 = inverse_kinematics(x, y, theta_total, l1, l2)
+    theta1_deg, theta2_deg = np.degrees([theta1, theta2])
+
+    print(f"\nθ₁ = {theta1_deg:.2f}°")
+    print(f"θ₂ = {theta2_deg:.2f}°")
+
+    # Joint positions
+    x1, y1 = l1 * np.cos(theta1), l1 * np.sin(theta1)
+    x2, y2 = x1 + l2 * np.cos(theta_total), y1 + l2 * np.sin(theta_total)
+    print(f"Joint 1 position: ({x1:.2f}, {y1:.2f})")
+    print(f"End-effector position: ({x2:.2f}, {y2:.2f})")
+
+    # Plot the robot arm
+    plt.figure(figsize=(6, 6))
+    plt.grid(True, linestyle='--', linewidth=0.5)
+    plt.plot([0, x1], [0, y1], 'r-', linewidth=3, label='Link 1')
+    plt.plot([x1, x2], [y1, y2], 'g-', linewidth=3, label='Link 2')
+    plt.plot(x, y, 'bo', markersize=8, label='Target')
+    plt.scatter([0, x1, x2], [0, y1, y2], c='k', zorder=5)
+    plt.xlim([-2, 2])
+    plt.ylim([-2, 2])
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('2-DOF Robot Arm - Inverse Kinematics')
+    plt.legend()
+    plt.show()
+
+except ValueError as e:
+    print("\nError:", e)
