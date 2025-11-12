@@ -1,0 +1,93 @@
+First experiment : 
+
+# ==========================
+# 1. Update system packages
+# ==========================
+sudo apt update
+sudo apt upgrade -y
+
+# ==========================
+# 2. Install ROS (Example: ROS Noetic for Ubuntu 20.04)
+# ==========================
+sudo apt install ros-noetic-desktop-full -y
+
+# ==========================
+# 3. Initialize rosdep (dependency manager)
+# ==========================
+sudo rosdep init
+rosdep update
+
+# ==========================
+# 4. Setup ROS environment variables permanently
+# ==========================
+echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+
+# ==========================
+# 5. Install essential ROS build tools
+# ==========================
+sudo apt install python3-rosinstall python3-rosinstall-generator python3-wstool build-essential -y
+
+# ==========================
+# 6. Create and initialize Catkin workspace
+# ==========================
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/
+catkin_make
+
+# ==========================
+# 7. Source the workspace setup file
+# ==========================
+source devel/setup.bash
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+
+# ==========================
+# 8. Create a new ROS package (example: my_robot)
+# ==========================
+cd ~/catkin_ws/src
+catkin_create_pkg my_robot std_msgs rospy roscpp
+
+# ==========================
+# 9. Check package structure
+# ==========================
+ls ~/catkin_ws/src/my_robot
+
+# ==========================
+# 10. Install dependencies for all packages
+# ==========================
+cd ~/catkin_ws
+rosdep install --from-paths src --ignore-src -r -y
+
+# ==========================
+# 11. Build the workspace again
+# ==========================
+catkin_make
+
+# ==========================
+# 12. Source the setup file after build
+# ==========================
+source devel/setup.bash
+
+# ==========================
+# 13. Verify environment and packages
+# ==========================
+echo $ROS_PACKAGE_PATH
+rospack list | grep my_robot
+
+# ==========================
+# 14. Optional: Organize workspace folders for large projects
+# ==========================
+mkdir ~/catkin_ws/src/drivers
+mkdir ~/catkin_ws/src/algorithms
+mkdir ~/catkin_ws/src/simulation
+mkdir ~/catkin_ws/src/tools
+
+# ==========================
+# 15. Initialize Git version control (optional but recommended)
+# ==========================
+cd ~/catkin_ws
+git init
+echo "build/" >> .gitignore
+echo "devel/" >> .gitignore
+echo "install/" >> .gitignore
+touch README.md
